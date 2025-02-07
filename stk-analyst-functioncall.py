@@ -110,15 +110,24 @@ def query_openai_model(client, system_prompt, messages):
         tool_call = tool_check.choices[0].message.tool_calls[0]
         args = json.loads(tool_call.function.arguments)
         name = tool_call.function.name
+        if name == 'get_reddit_issues_summarized' and 'keyword' in args:
+            keyword = args['keyword']
+            days = args.get('days', 7)
+            reddit_data = get_reddit_issues_summarized(keyword, days)
 
-        result = call_function(name, args)
-        tool_chatmessage = messages + [tool_check.choices[0].message]
-         # append model's function call message
-        tool_chatmessage.append({                               # append result message
-            "role": "tool",
-            "tool_call_id": tool_call.id,
-            "content": str(result)
-        })
+            system_prompt = f"주어진 데이터에서 {keyword}에 대한 중요한 내용을 요약해줘 한국어로."
+            tool_chatmessage = [{"role": "system", "content": system_prompt}, {"role": "user", "content": reddit_data}]
+
+        else:
+
+            result = call_function(name, args)
+            tool_chatmessage = messages + [tool_check.choices[0].message]
+            # append model's function call message
+            tool_chatmessage.append({                               # append result message
+                "role": "tool",
+                "tool_call_id": tool_call.id,
+                "content": str(result)
+            })
         
         stream = client.chat.completions.create(
             model="gpt-4o",
@@ -162,24 +171,24 @@ def get_reddit_issues_summarized(keyword ,days):
     titleandbody = '\n\n'.join(posts_data)
 
     
-    client = OpenAI()
+    # client = OpenAI()
     
-    response = client.chat.completions.create(
-      model="gpt-4o",
-      messages=[
-        {
-          "role": "system",
-          "content": f"The given data is title and body collected from reddit. 주어진 내용을 기반으로 {keyword} 주가에 영향을 미치는 가장 hot 한 이슈가 뭔지 요약해줘 한국어로 "
-        },
-        {
-          "role": "user",
-          "content": titleandbody }
-      ],
-      temperature=1,
-      max_tokens=1024,
-      top_p=1
-    )
-    return response.choices[0].message.content
+    # response = client.chat.completions.create(
+    #   model="gpt-4o",
+    #   messages=[
+    #     {
+    #       "role": "system",
+    #       "content": f"The given data is title and body collected from reddit. 주어진 내용을 기반으로 {keyword} 주가에 영향을 미치는 가장 hot 한 이슈가 뭔지 요약해줘 한국어로 "
+    #     },
+    #     {
+    #       "role": "user",
+    #       "content": titleandbody }
+    #   ],
+    #   temperature=1,
+    #   max_tokens=1024,
+    #   top_p=1
+    # )
+    return titleandbody
 
 def get_reddit_hotissue(days):
     redditid = 'mOOCYGbbZZ7_n-x6TucUwQ'
@@ -206,24 +215,24 @@ def get_reddit_hotissue(days):
     titleandbody = '\n\n'.join(posts_data)
 
     
-    client = OpenAI()
+    # client = OpenAI()
     
-    response = client.chat.completions.create(
-      model="gpt-4o",
-      messages=[
-        {
-          "role": "system",
-          "content": f"The given data is title and body collected from reddit. 주어진 내용을 기반으로 최근 레딧 wallstreetbets에서 가장 hot 한 이슈가 뭔지 요약해줘 한국어로 "
-        },
-        {
-          "role": "user",
-          "content": titleandbody }
-      ],
-      temperature=1,
-      max_tokens=1024,
-      top_p=1
-    )
-    return response.choices[0].message.content
+    # response = client.chat.completions.create(
+    #   model="gpt-4o",
+    #   messages=[
+    #     {
+    #       "role": "system",
+    #       "content": f"The given data is title and body collected from reddit. 주어진 내용을 기반으로 최근 레딧 wallstreetbets에서 가장 hot 한 이슈가 뭔지 요약해줘 한국어로 "
+    #     },
+    #     {
+    #       "role": "user",
+    #       "content": titleandbody }
+    #   ],
+    #   temperature=1,
+    #   max_tokens=1024,
+    #   top_p=1
+    # )
+    return titleandbody
 
 def get_consensus(symbol , year, quarter):
 
