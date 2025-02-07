@@ -246,14 +246,16 @@ def get_consensus(symbol , year, quarter):
         
     
     year_consensus = [a for a in consensus_response if a['year']==year ]
-    if quarter =='-1':
-        return year_consensus[-1]
+    if year_consensus:
+        if quarter =='-1':
+            return year_consensus[-1]
+        else:
+            
+            year_quarter_consensus = [a for a in year_consensus if a['quarter'] == quarter][0]
+
+            return year_quarter_consensus
     else:
-        
-        year_quarter_consensus = [a for a in year_consensus if a['quarter'] == quarter][0]
-
-        return year_quarter_consensus
-
+        return '컨센서스 데이터를 찾을수 없습니다.'
 def get_earnings(symbol, type_ ,year, quarter):
     ticker = yf.Ticker(symbol)
     if type_ == 'yearly':
