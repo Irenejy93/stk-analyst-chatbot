@@ -34,7 +34,7 @@ tools= [{"type": "function",
     {"type": "function",       
        "function":   {
         "name":'get_reddit_hotissue',
-        "description":'당신은 핫한 이슈 요약하는 챗봇입니다.',
+        "description":'당신은 (레딧에서) 핫한 이슈 또는 종목 요약하는 챗봇입니다.',
         'parameters':{
             "type":"object",
             "properties" :{
@@ -81,25 +81,6 @@ tools= [{"type": "function",
     }}]
 
 
-def load_file(file):
-    if file.type == "text/csv":
-        return pd.read_csv(file)
-    elif file.type == "text/plain":
-        return file.getvalue().decode("utf-8")
-    elif file.type == "application/pdf":
-        return extract_text_from_pdf(file)
-    else:
-        st.error("지원하지 않는 파일 형식입니다❎")
-        return None
-
-# def extract_text_from_pdf(file):
-#     pdf_file = io.BytesIO(file.getvalue())
-#     with fitz.open(stream=pdf_file, filetype="pdf") as doc:
-#         text = ""
-#         for page in doc:
-#             text += page.get_text()
-#     return text
-
 def query_openai_model(client, system_prompt, messages):
     tool_check = client.chat.completions.create(
         model="gpt-4o",
@@ -110,24 +91,14 @@ def query_openai_model(client, system_prompt, messages):
         tool_call = tool_check.choices[0].message.tool_calls[0]
         args = json.loads(tool_call.function.arguments)
         name = tool_call.function.name
-        if name == 'get_reddit_issues_summarized' and 'keyword' in args:
-            keyword = args['keyword']
-            days = args.get('days', 7)
-            reddit_data = get_reddit_issues_summarized(keyword, days)
-
-            system_prompt = f"주어진 데이터에서 {keyword}에 대한 중요한 내용을 요약해줘 한국어로."
-            tool_chatmessage = [{"role": "system", "content": system_prompt}, {"role": "user", "content": reddit_data}]
-
-        else:
-
-            result = call_function(name, args)
-            tool_chatmessage = messages + [tool_check.choices[0].message]
-            # append model's function call message
-            tool_chatmessage.append({                               # append result message
-                "role": "tool",
-                "tool_call_id": tool_call.id,
-                "content": str(result)
-            })
+        result = call_function(name, args)
+        tool_chatmessage = messages + [tool_check.choices[0].message]
+        # append model's function call message
+        tool_chatmessage.append({                               # append result message
+            "role": "tool",
+            "tool_call_id": tool_call.id,
+            "content": str(result)
+        })
         
         stream = client.chat.completions.create(
             model="gpt-4o",
@@ -136,7 +107,6 @@ def query_openai_model(client, system_prompt, messages):
         )
     else:
 
-    
         full_messages = [{"role": "system", "content": system_prompt}] + messages
         stream = client.chat.completions.create(
             model="gpt-4o",
@@ -170,24 +140,6 @@ def get_reddit_issues_summarized(keyword ,days):
                 'body :' + post.selftext)
     titleandbody = '\n\n'.join(posts_data)
 
-    
-    # client = OpenAI()
-    
-    # response = client.chat.completions.create(
-    #   model="gpt-4o",
-    #   messages=[
-    #     {
-    #       "role": "system",
-    #       "content": f"The given data is title and body collected from reddit. 주어진 내용을 기반으로 {keyword} 주가에 영향을 미치는 가장 hot 한 이슈가 뭔지 요약해줘 한국어로 "
-    #     },
-    #     {
-    #       "role": "user",
-    #       "content": titleandbody }
-    #   ],
-    #   temperature=1,
-    #   max_tokens=1024,
-    #   top_p=1
-    # )
     return titleandbody
 
 def get_reddit_hotissue(days):
@@ -214,24 +166,6 @@ def get_reddit_hotissue(days):
                 'body :' + post.selftext)
     titleandbody = '\n\n'.join(posts_data)
 
-    
-    # client = OpenAI()
-    
-    # response = client.chat.completions.create(
-    #   model="gpt-4o",
-    #   messages=[
-    #     {
-    #       "role": "system",
-    #       "content": f"The given data is title and body collected from reddit. 주어진 내용을 기반으로 최근 레딧 wallstreetbets에서 가장 hot 한 이슈가 뭔지 요약해줘 한국어로 "
-    #     },
-    #     {
-    #       "role": "user",
-    #       "content": titleandbody }
-    #   ],
-    #   temperature=1,
-    #   max_tokens=1024,
-    #   top_p=1
-    # )
     return titleandbody
 
 def get_consensus(symbol , year, quarter):
@@ -245,10 +179,11 @@ def get_consensus(symbol , year, quarter):
             consensus['quarter'] = '1'
         elif consensus['date'][5:7] == '08':
              consensus['quarter'] = '2'
-        elif consensus['date'][5:7] == '11':
+        elif consensus['date'][5:7] == '11' or consensus['date'][5:7] == '10' :
              consensus['quarter'] = '3'
         elif consensus['date'][5:7] == '02':
              consensus['quarter'] = '4'
+             consensus['year'] = str(int(year) -1)
             
         consensus['EPS_surprise'] = ((consensus['actualEarningResult'] - consensus['estimatedEarning']) / 
                                            consensus['estimatedEarning']) * 100
