@@ -1,6 +1,7 @@
 # Stock Analyst Chatbot
 
 ## Overview
+https://github.com/Irenejy93/stk-analyst-chatbot/issues/1#issue-2837328848
 
 This project integrates multiple financial data sources and analyses to provide insights into stock market trends, earnings performance, and Reddit discussions about stocks. The chatbot is accessible via [Stock Analyst Chatbot](https://stk-analyst-chatbot-jdamhdaqsld9tw7d8ps8nj.streamlit.app/).
 
