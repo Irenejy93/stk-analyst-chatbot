@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+# import fitz
 from openai import OpenAI
 import io
 import time
@@ -78,6 +79,26 @@ tools= [{"type": "function",
         },
              "strict": True
     }}]
+
+
+def load_file(file):
+    if file.type == "text/csv":
+        return pd.read_csv(file)
+    elif file.type == "text/plain":
+        return file.getvalue().decode("utf-8")
+    elif file.type == "application/pdf":
+        return extract_text_from_pdf(file)
+    else:
+        st.error("지원하지 않는 파일 형식입니다❎")
+        return None
+
+# def extract_text_from_pdf(file):
+#     pdf_file = io.BytesIO(file.getvalue())
+#     with fitz.open(stream=pdf_file, filetype="pdf") as doc:
+#         text = ""
+#         for page in doc:
+#             text += page.get_text()
+#     return text
 
 def query_openai_model(client, system_prompt, messages):
     tool_check = client.chat.completions.create(
