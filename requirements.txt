@@ -1,4 +1,4 @@
-pip install fitz
-pip install openai
-pip install praw
-pip install yfinance
+fitz
+openai
+praw
+yfinance
